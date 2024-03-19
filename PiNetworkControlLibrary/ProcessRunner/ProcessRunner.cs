@@ -6,12 +6,12 @@ using System.IO.Pipelines;
 using System.Text;
 
 
-namespace PiNetworkControlLibrary.ProcessRunner
+namespace NetworkManagerWrapperLibrary.ProcessRunner
 {
     /// <summary>
     /// Controls an external process
     /// </summary>
-    public class ProcessRunner : IDisposable
+    internal class ProcessRunner : IDisposable
     {
         private readonly ProcessSettings _processSettings;
         private CancellationTokenSource _cancellationTokenSource;
