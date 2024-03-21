@@ -15,6 +15,7 @@ namespace NetworkManagerWrapperLibrary.NetworkController
         {
         }
 
+        // General methods
         public async Task<bool> CheckNetworkManagerServiceExecutionAsync()
         {
             StringBuilder stdOutBuffer = new();
@@ -27,17 +28,16 @@ namespace NetworkManagerWrapperLibrary.NetworkController
                 .ExecuteAsync();
 
             var stdOut = stdOutBuffer.ToString();
-            var stdErr = stdErrBuffer.ToString();
 
             if (result.ExitCode != 0)
             {
-                throw new Exception($"Error: {stdErr}");
+                throw new Exception($"Error: {stdErrBuffer}");
             }
 
             return stdOut.Contains("Active: active (running)");
         }
 
-        public async Task<List<NetworkDevice>> GetNetworkDevicesAsync()
+        public async Task<List<NetworkDevice>> GetDevicesAsync()
         {
             StringBuilder stdOutBuffer = new();
             StringBuilder stdErrBuffer = new();
@@ -49,16 +49,14 @@ namespace NetworkManagerWrapperLibrary.NetworkController
                 .ExecuteAsync();
 
             var stdOut = stdOutBuffer.ToString();
-            var stdErr = stdErrBuffer.ToString();
 
             if (result.ExitCode != 0)
             {
-                throw new Exception($"Error: {stdErr}");
+                throw new Exception($"Error: {stdErrBuffer}");
             }
 
             var networkDevices = new List<NetworkDevice>();
             var lines = stdOut.Split("\n").ToList();
-
             for (int i = 1; i < lines.Count() - 1; i++)
             {
                 var line = lines[i];
@@ -72,11 +70,10 @@ namespace NetworkManagerWrapperLibrary.NetworkController
                 };
                 networkDevices.Add(device);
             }
-
             return networkDevices;
         }
 
-        public async Task<Dictionary<string, string>> GetNetworkDevicePropertiesAsync(string id)
+        public async Task<Dictionary<string, string>> GetDevicePropertiesAsync(string id)
         {
             StringBuilder stdOutBuffer = new();
             StringBuilder stdErrBuffer = new();
@@ -88,15 +85,13 @@ namespace NetworkManagerWrapperLibrary.NetworkController
                 .ExecuteAsync();
 
             var stdOut = stdOutBuffer.ToString();
-            var stdErr = stdErrBuffer.ToString();
 
             if (result.ExitCode != 0)
             {
-                throw new Exception($"Error: {stdErr}");
+                throw new Exception($"Error: {stdErrBuffer}");
             }
 
             var properties = new Dictionary<string, string>();
-
             var lines = stdOut.Split("\n").ToList();
             foreach (var line in lines)
             {
@@ -106,11 +101,11 @@ namespace NetworkManagerWrapperLibrary.NetworkController
                     properties.Add(parts[0].Trim(), parts[1].Trim());
                 }
             }
-            
+
             return properties;
         }
 
-        public async Task<List<NetworkConnection>> GetNetworkConnectionsAsync()
+        public async Task<List<NetworkConnection>> GetConnectionsAsync()
         {
             StringBuilder stdOutBuffer = new();
             StringBuilder stdErrBuffer = new();
@@ -122,11 +117,10 @@ namespace NetworkManagerWrapperLibrary.NetworkController
                 .ExecuteAsync();
 
             var stdOut = stdOutBuffer.ToString();
-            var stdErr = stdErrBuffer.ToString();
 
             if (result.ExitCode != 0)
             {
-                throw new Exception($"Error: {stdErr}");
+                throw new Exception($"Error: {stdErrBuffer}");
             }
 
             var networkConnections = new List<NetworkConnection>();
@@ -149,7 +143,7 @@ namespace NetworkManagerWrapperLibrary.NetworkController
             return networkConnections;
         }
 
-        public async Task<Dictionary<string, string>> GetNetworkConnectionPropertiesAsync(string id)
+        public async Task<Dictionary<string, string>> GetConnectionPropertiesAsync(string id)
         {
             StringBuilder stdOutBuffer = new();
             StringBuilder stdErrBuffer = new();
@@ -161,11 +155,10 @@ namespace NetworkManagerWrapperLibrary.NetworkController
                 .ExecuteAsync();
 
             var stdOut = stdOutBuffer.ToString();
-            var stdErr = stdErrBuffer.ToString();
 
             if (result.ExitCode != 0)
             {
-                throw new Exception($"Error: {stdErr}");
+                throw new Exception($"Error: {stdErrBuffer}");
             }
 
             var properties = new Dictionary<string, string>();
@@ -177,28 +170,204 @@ namespace NetworkManagerWrapperLibrary.NetworkController
                 if (parts.Length > 1)
                 {
                     // Mac address has a colon in it, so we need to join the parts
-                    properties.Add(parts[0].Trim(), string.Join(":", parts.Skip(1)));
+                    properties.Add(parts[0].Trim(), string.Join(":", parts.Skip(1)).Trim());
                 }
             }
 
             return properties;
         }
 
-        public bool ModifyNetworkConnection()
+        public async Task AddConnection(string type, string name, string interfaceId)
         {
-            throw new NotImplementedException();
+            StringBuilder stdOutBuffer = new();
+            StringBuilder stdErrBuffer = new();
+
+            var result = await Cli.Wrap("sudo")
+                .WithArguments($"nmcli connection add type {type} con-name {name} ifname {interfaceId}")
+                .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdOutBuffer))
+                .WithStandardErrorPipe(PipeTarget.ToStringBuilder(stdErrBuffer))
+                .ExecuteAsync();
+
+            if (result.ExitCode != 0)
+            {
+                throw new Exception($"Error: {stdErrBuffer}");
+            }
         }
 
-        public bool EnableNetworkConnection()
+        public async Task<bool> ModifyConnectionAsync(string connectionId, string property, string value)
         {
-            throw new NotImplementedException();
+            StringBuilder stdOutBuffer = new();
+            StringBuilder stdErrBuffer = new();
+
+            var result = await Cli.Wrap("sudo")
+                .WithArguments($"nmcli connection modify {connectionId} {property} {value}")
+                .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdOutBuffer))
+                .WithStandardErrorPipe(PipeTarget.ToStringBuilder(stdErrBuffer))
+                .ExecuteAsync();
+
+            if (result.ExitCode != 0)
+            {
+                throw new Exception($"Error: {stdErrBuffer}");
+            }
+
+            return true;
         }
 
-        public bool DisableNetworkConnection()
+        public async Task<bool> DeleteConnectionAsync(string id)
         {
-            throw new NotImplementedException();
+            StringBuilder stdOutBuffer = new();
+            StringBuilder stdErrBuffer = new();
+
+            var result = await Cli.Wrap("sudo")
+                .WithArguments($"nmcli connection delete {id}")
+                .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdOutBuffer))
+                .WithStandardErrorPipe(PipeTarget.ToStringBuilder(stdErrBuffer))
+                .ExecuteAsync();
+
+            if (result.ExitCode != 0)
+            {
+                throw new Exception($"Error: {stdErrBuffer}");
+            }
+
+            return true;
         }
 
-        // Wifi will be added later
+        public async Task<bool> EnableConnectionAsync(string id)
+        {
+            StringBuilder stdOutBuffer = new();
+            StringBuilder stdErrBuffer = new();
+
+            var result = await Cli.Wrap("sudo")
+                .WithArguments($"nmcli connection up {id}")
+                .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdOutBuffer))
+                .WithStandardErrorPipe(PipeTarget.ToStringBuilder(stdErrBuffer))
+                .ExecuteAsync();
+
+            if (result.ExitCode != 0)
+            {
+                throw new Exception($"Error: {stdErrBuffer}");
+            }
+
+            return true;
+        }
+
+        public async Task<bool> DisableConnectionAsync(string id)
+        {
+            StringBuilder stdOutBuffer = new();
+            StringBuilder stdErrBuffer = new();
+
+            var result = await Cli.Wrap("sudo")
+                .WithArguments($"nmcli connection down {id}")
+                .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdOutBuffer))
+                .WithStandardErrorPipe(PipeTarget.ToStringBuilder(stdErrBuffer))
+                .ExecuteAsync();
+
+            if (result.ExitCode != 0)
+            {
+                throw new Exception($"Error: {stdErrBuffer}");
+            }
+
+            return true;
+        }
+
+        // Wifi methods
+        public async Task<bool> CheckRadioStatusAsync()
+        {
+            StringBuilder stdOutBuffer = new();
+            StringBuilder stdErrBuffer = new();
+
+            var result = await Cli.Wrap("nmcli")
+                .WithArguments("radio wifi")
+                .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdOutBuffer))
+                .WithStandardErrorPipe(PipeTarget.ToStringBuilder(stdErrBuffer))
+                .ExecuteAsync();
+
+            var stdOut = stdOutBuffer.ToString();
+
+            if (result.ExitCode != 0)
+            {
+                throw new Exception($"Error: {stdErrBuffer}");
+            }
+
+            return stdOut.Contains("enabled");
+        }
+
+        public async Task<bool> EnableRadioAsync()
+        {
+            StringBuilder stdOutBuffer = new();
+            StringBuilder stdErrBuffer = new();
+
+            var result = await Cli.Wrap("sudo")
+                .WithArguments("nmcli radio wifi on")
+                .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdOutBuffer))
+                .WithStandardErrorPipe(PipeTarget.ToStringBuilder(stdErrBuffer))
+                .ExecuteAsync();
+
+            if (result.ExitCode != 0)
+            {
+                throw new Exception($"Error: {stdErrBuffer}");
+            }
+
+            return true;
+        }
+
+        public async Task<bool> DisableRadioAsync()
+        {
+            StringBuilder stdOutBuffer = new();
+            StringBuilder stdErrBuffer = new();
+
+            var result = await Cli.Wrap("sudo")
+                .WithArguments("nmcli radio wifi off")
+                .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdOutBuffer))
+                .WithStandardErrorPipe(PipeTarget.ToStringBuilder(stdErrBuffer))
+                .ExecuteAsync();
+
+            if (result.ExitCode != 0)
+            {
+                throw new Exception($"Error: {stdErrBuffer}");
+            }
+
+            return true;
+        }
+
+        public async Task<List<string>> GetWifiListAsync()
+        {
+            StringBuilder stdOutBuffer = new();
+            StringBuilder stdErrBuffer = new();
+
+            var result = await Cli.Wrap("nmcli")
+                .WithArguments("device wifi list")
+                .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdOutBuffer))
+                .WithStandardErrorPipe(PipeTarget.ToStringBuilder(stdErrBuffer))
+                .ExecuteAsync();
+
+            var stdOut = stdOutBuffer.ToString();
+
+            if (result.ExitCode != 0)
+            {
+                throw new Exception($"Error: {stdErrBuffer}");
+            }
+
+            return stdOut.Split("\n").ToList();
+        }
+
+        public async Task<bool> ConnectToWifi(string ssid, string password)
+        {
+            StringBuilder stdOutBuffer = new();
+            StringBuilder stdErrBuffer = new();
+
+            var result = await Cli.Wrap("sudo")
+                .WithArguments($"nmcli device wifi connect \"{ssid}\" password \"{password}\"")
+                .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdOutBuffer))
+                .WithStandardErrorPipe(PipeTarget.ToStringBuilder(stdErrBuffer))
+                .ExecuteAsync();
+
+            if (result.ExitCode != 0)
+            {
+                throw new Exception($"Error: {stdErrBuffer}");
+            }
+
+            return true;
+        }
     }
 }
