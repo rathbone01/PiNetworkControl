@@ -1,4 +1,4 @@
-﻿using PiNetworkControlLibrary.ProcessRunner;
+﻿using NetworkManagerWrapperLibrary.ProcessRunner;
 
 namespace PiNetworkControl
 {

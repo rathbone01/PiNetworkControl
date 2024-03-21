@@ -8,5 +8,9 @@ namespace NetworkManagerWrapperLibrary.Models
 {
     public class NetworkDevice
     {
+        public string Device { get; set; } = string.Empty;
+        public string Type { get; set; } = string.Empty;
+        public string State { get; set; } = string.Empty;
+        public string Connection { get; set; } = string.Empty;
     }
 }
