@@ -8,7 +8,7 @@ namespace PiNetworkControl
         {
             var test = new NetworkControllerTestClass();
 
-            test.Run();
+            test.Run().Wait();
         }
     }
 }

@@ -1,0 +1,15 @@
+Dhcp
+nmcli con mod myconnection ipv4.method auto
+nmcli con mod myconnection ipv4.method manual
+
+ipv4 address and subnet
+nmcli con mod connection-name ipv4.addresses 192.168.1.100/24
+
+dns
+nmcli con mod connection-name ipv4.dns "8.8.8.8, 8.8.4.4"
+
+gateway
+nmcli con mod connection-name ipv4.gateway 192.168.1.1
+
+make changes persistent?
+nmcli con mod myconnection connection.autoconnect yes

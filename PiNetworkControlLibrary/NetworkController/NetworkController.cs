@@ -194,7 +194,7 @@ namespace NetworkManagerWrapperLibrary.NetworkController
             }
         }
 
-        public async Task<bool> ModifyConnectionAsync(string connectionId, string property, string value)
+        public async Task<bool> ModifyConnectionPropertyAsync(string connectionId, string property, string value)
         {
             StringBuilder stdOutBuffer = new();
             StringBuilder stdErrBuffer = new();
@@ -210,7 +210,32 @@ namespace NetworkManagerWrapperLibrary.NetworkController
                 throw new Exception($"Error: {stdErrBuffer}");
             }
 
+            // Check if the property was set correctly (needs to be tested)
+            if ((await GetConnectionPropertyAsync(connectionId, property)).ToLower() != value.ToLower())
+            {
+                return false;
+            }
+
             return true;
+        }
+
+        public async Task<string> GetConnectionPropertyAsync(string connectionId, string property)
+        {
+            StringBuilder stdOutBuffer = new();
+            StringBuilder stdErrBuffer = new();
+
+            var result = await Cli.Wrap("nmcli")
+                .WithArguments($"--terse --fields {property} con show {connectionId} | awk -F: '{{print $2}}'")
+                .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdOutBuffer))
+                .WithStandardErrorPipe(PipeTarget.ToStringBuilder(stdErrBuffer))
+                .ExecuteAsync();
+
+            if (result.ExitCode != 0)
+            {
+                throw new Exception($"Error: {stdErrBuffer}");
+            }
+
+            return stdOutBuffer.ToString();
         }
 
         public async Task<bool> DeleteConnectionAsync(string id)
