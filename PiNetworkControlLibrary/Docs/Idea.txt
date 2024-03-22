@@ -1,0 +1,10 @@
+4 connections?
+
+DCHP Wifi
+Static Wifi
+
+DHCP Eth
+Static Eth
+
+con up whichever one is needed after modifing
+test that the connection works, switch back to dhcp if it doesn't?
