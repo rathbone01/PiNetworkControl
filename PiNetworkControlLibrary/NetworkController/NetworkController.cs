@@ -25,6 +25,7 @@ namespace NetworkManagerWrapperLibrary.NetworkController
                 .WithArguments("status NetworkManager")
                 .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdOutBuffer))
                 .WithStandardErrorPipe(PipeTarget.ToStringBuilder(stdErrBuffer))
+                .WithValidation(CommandResultValidation.None)
                 .ExecuteAsync();
 
             var stdOut = stdOutBuffer.ToString();
@@ -46,6 +47,7 @@ namespace NetworkManagerWrapperLibrary.NetworkController
                 .WithArguments("device")
                 .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdOutBuffer))
                 .WithStandardErrorPipe(PipeTarget.ToStringBuilder(stdErrBuffer))
+                .WithValidation(CommandResultValidation.None)
                 .ExecuteAsync();
 
             var stdOut = stdOutBuffer.ToString();
@@ -82,6 +84,7 @@ namespace NetworkManagerWrapperLibrary.NetworkController
                 .WithArguments($"device show {id}")
                 .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdOutBuffer))
                 .WithStandardErrorPipe(PipeTarget.ToStringBuilder(stdErrBuffer))
+                .WithValidation(CommandResultValidation.None)
                 .ExecuteAsync();
 
             var stdOut = stdOutBuffer.ToString();
@@ -114,6 +117,7 @@ namespace NetworkManagerWrapperLibrary.NetworkController
                 .WithArguments("connection")
                 .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdOutBuffer))
                 .WithStandardErrorPipe(PipeTarget.ToStringBuilder(stdErrBuffer))
+                .WithValidation(CommandResultValidation.None)
                 .ExecuteAsync();
 
             var stdOut = stdOutBuffer.ToString();
@@ -152,6 +156,7 @@ namespace NetworkManagerWrapperLibrary.NetworkController
                 .WithArguments($"connection show id {id}")
                 .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdOutBuffer))
                 .WithStandardErrorPipe(PipeTarget.ToStringBuilder(stdErrBuffer))
+                .WithValidation(CommandResultValidation.None)
                 .ExecuteAsync();
 
             var stdOut = stdOutBuffer.ToString();
@@ -177,15 +182,34 @@ namespace NetworkManagerWrapperLibrary.NetworkController
             return properties;
         }
 
-        public async Task AddConnection(string type, string name, string interfaceId)
+        public async Task AddEthernetConnectionAsync(string name, string interfaceId)
         {
             StringBuilder stdOutBuffer = new();
             StringBuilder stdErrBuffer = new();
 
             var result = await Cli.Wrap("sudo")
-                .WithArguments($"nmcli connection add type {type} con-name {name} ifname {interfaceId}")
+                .WithArguments($"nmcli connection add type ethernet con-name {name} ifname {interfaceId}")
                 .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdOutBuffer))
                 .WithStandardErrorPipe(PipeTarget.ToStringBuilder(stdErrBuffer))
+                .WithValidation(CommandResultValidation.None)
+                .ExecuteAsync();
+
+            if (result.ExitCode != 0)
+            {
+                throw new Exception($"Error: {stdErrBuffer}");
+            }
+        }
+
+        public async Task AddWifiConnectionAsync(string name, string interfaceId, string ssid, string password, string keyManagement)
+        {
+            StringBuilder stdOutBuffer = new();
+            StringBuilder stdErrBuffer = new();
+
+            var result = await Cli.Wrap("sudo")
+                .WithArguments($"nmcli connection add type wifi con-name {name} ifname {interfaceId} ssid \"{ssid}\" +802-11-wireless-security.key-mgmt \"{keyManagement}\" +802-11-wireless-security.psk \"{password}\"")
+                .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdOutBuffer))
+                .WithStandardErrorPipe(PipeTarget.ToStringBuilder(stdErrBuffer))
+                .WithValidation(CommandResultValidation.None)
                 .ExecuteAsync();
 
             if (result.ExitCode != 0)
@@ -203,6 +227,7 @@ namespace NetworkManagerWrapperLibrary.NetworkController
                 .WithArguments($"nmcli connection modify {connectionId} {property} {value}")
                 .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdOutBuffer))
                 .WithStandardErrorPipe(PipeTarget.ToStringBuilder(stdErrBuffer))
+                .WithValidation(CommandResultValidation.None)
                 .ExecuteAsync();
 
             if (result.ExitCode != 0)
@@ -210,11 +235,12 @@ namespace NetworkManagerWrapperLibrary.NetworkController
                 throw new Exception($"Error: {stdErrBuffer}");
             }
 
+
             // Check if the property was set correctly (needs to be tested)
-            if ((await GetConnectionPropertyAsync(connectionId, property)).ToLower() != value.ToLower())
-            {
-                return false;
-            }
+            //if ((await GetConnectionPropertyAsync(connectionId, property)).ToLower() != value.ToLower())
+            //{
+            //    return false;
+            //}
 
             return true;
         }
@@ -228,6 +254,7 @@ namespace NetworkManagerWrapperLibrary.NetworkController
                 .WithArguments($"--terse --fields {property} con show {connectionId} | awk -F: '{{print $2}}'")
                 .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdOutBuffer))
                 .WithStandardErrorPipe(PipeTarget.ToStringBuilder(stdErrBuffer))
+                .WithValidation(CommandResultValidation.None)
                 .ExecuteAsync();
 
             if (result.ExitCode != 0)
@@ -247,6 +274,7 @@ namespace NetworkManagerWrapperLibrary.NetworkController
                 .WithArguments($"nmcli connection delete {id}")
                 .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdOutBuffer))
                 .WithStandardErrorPipe(PipeTarget.ToStringBuilder(stdErrBuffer))
+                .WithValidation(CommandResultValidation.None)
                 .ExecuteAsync();
 
             if (result.ExitCode != 0)
@@ -266,6 +294,7 @@ namespace NetworkManagerWrapperLibrary.NetworkController
                 .WithArguments($"nmcli connection up {id}")
                 .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdOutBuffer))
                 .WithStandardErrorPipe(PipeTarget.ToStringBuilder(stdErrBuffer))
+                .WithValidation(CommandResultValidation.None)
                 .ExecuteAsync();
 
             if (result.ExitCode != 0)
@@ -285,6 +314,7 @@ namespace NetworkManagerWrapperLibrary.NetworkController
                 .WithArguments($"nmcli connection down {id}")
                 .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdOutBuffer))
                 .WithStandardErrorPipe(PipeTarget.ToStringBuilder(stdErrBuffer))
+                .WithValidation(CommandResultValidation.None)
                 .ExecuteAsync();
 
             if (result.ExitCode != 0)
@@ -305,6 +335,7 @@ namespace NetworkManagerWrapperLibrary.NetworkController
                 .WithArguments("radio wifi")
                 .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdOutBuffer))
                 .WithStandardErrorPipe(PipeTarget.ToStringBuilder(stdErrBuffer))
+                .WithValidation(CommandResultValidation.None)
                 .ExecuteAsync();
 
             var stdOut = stdOutBuffer.ToString();
@@ -326,6 +357,7 @@ namespace NetworkManagerWrapperLibrary.NetworkController
                 .WithArguments("nmcli radio wifi on")
                 .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdOutBuffer))
                 .WithStandardErrorPipe(PipeTarget.ToStringBuilder(stdErrBuffer))
+                .WithValidation(CommandResultValidation.None)
                 .ExecuteAsync();
 
             if (result.ExitCode != 0)
@@ -345,6 +377,7 @@ namespace NetworkManagerWrapperLibrary.NetworkController
                 .WithArguments("nmcli radio wifi off")
                 .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdOutBuffer))
                 .WithStandardErrorPipe(PipeTarget.ToStringBuilder(stdErrBuffer))
+                .WithValidation(CommandResultValidation.None)
                 .ExecuteAsync();
 
             if (result.ExitCode != 0)
@@ -364,6 +397,7 @@ namespace NetworkManagerWrapperLibrary.NetworkController
                 .WithArguments("device wifi list")
                 .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdOutBuffer))
                 .WithStandardErrorPipe(PipeTarget.ToStringBuilder(stdErrBuffer))
+                .WithValidation(CommandResultValidation.None)
                 .ExecuteAsync();
 
             var stdOut = stdOutBuffer.ToString();
@@ -385,6 +419,7 @@ namespace NetworkManagerWrapperLibrary.NetworkController
                 .WithArguments($"nmcli device wifi connect \"{ssid}\" password \"{password}\"")
                 .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdOutBuffer))
                 .WithStandardErrorPipe(PipeTarget.ToStringBuilder(stdErrBuffer))
+                .WithValidation(CommandResultValidation.None)
                 .ExecuteAsync();
 
             if (result.ExitCode != 0)
