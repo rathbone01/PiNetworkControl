@@ -69,29 +69,28 @@ In these examples assume the following:
 
 ### Connecting to the network:
 ```csharp
-    private async Task<bool> Connect(string connectionName, NetworkConfiguration networkConfiguration)
-    {
-        if (networkConfiguration.NetworkType == NetworkType.Wifi)
+        private async Task<bool> Connect(string connectionName, NetworkConfiguration networkConfiguration)
         {
-            if (!await networkController.EnableRadioAsync())
+            if (networkConfiguration.NetworkType == NetworkType.Wifi)
             {
-                _logger?.LogError("Error enabling wifi radio");
-            }
-            else
-            {
+                if (!await networkController.EnableRadioAsync())
+                {
+                    _logger?.LogError("Error enabling wifi radio");
+                    return false;
+                }
+
                 _logger?.LogInformation("Enabled wifi radio");
             }
-        }
-    
-        if (await networkController.EnableConnectionAsync(connectionName))
-        {
-            _logger?.LogInformation($"Enabled connection {connectionName}");
-            return true;
-        }
 
-         _logger?.LogError($"Error enabling connection {connectionName}");
-        return false;
-    }
+            if (await networkController.EnableConnectionAsync(connectionName))
+            {
+                _logger?.LogInformation($"Enabled connection {connectionName}");
+                return true;
+            }
+
+                _logger?.LogError($"Error enabling connection {connectionName}");
+            return false;
+        }
 ```
 
 ### Creating an access point
