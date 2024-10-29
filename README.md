@@ -77,8 +77,10 @@ In these examples assume the following:
             {
                 _logger?.LogError("Error enabling wifi radio");
             }
-
-            _logger?.LogInformation("Enabled wifi radio");
+            else
+            {
+                _logger?.LogInformation("Enabled wifi radio");
+            }
         }
     
         if (await networkController.EnableConnectionAsync(connectionName))
