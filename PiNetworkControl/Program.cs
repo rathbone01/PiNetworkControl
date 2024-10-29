@@ -1,6 +1,4 @@
-﻿using NetworkManagerWrapperLibrary.ProcessRunner;
-
-namespace PiNetworkControl
+﻿namespace PiNetworkControl
 {
     internal class Program
     {

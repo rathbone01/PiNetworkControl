@@ -1,18 +1,21 @@
-﻿// This class relies on the CliWrap library to run the nmcli command line tool to interact with NetworkManager.
+﻿// This class relies on the CliWrap library to run the nmcli command line tool to interact with NetworkManager (nmcli).
 // This could also be achieved using the System.Diagnostics.Process class, but CliWrap is a more modern and easier to use library.
-//
-// https://www.baeldung.com/linux/network-manager
 
 using NetworkManagerWrapperLibrary.Models;
 using System.Text;
 using CliWrap;
+using Microsoft.Extensions.Logging;
 
 namespace NetworkManagerWrapperLibrary.NetworkController
 {
     public class NetworkController
     {
-        public NetworkController()
+        private ILogger<NetworkController>? _logger;
+
+        public NetworkController(ILogger<NetworkController>? logger = null)
         {
+            _logger = logger;
+            _logger?.LogDebug("NetworkController class created, Logger injected");
         }
 
         // General methods
@@ -20,7 +23,6 @@ namespace NetworkManagerWrapperLibrary.NetworkController
         {
             StringBuilder stdOutBuffer = new();
             StringBuilder stdErrBuffer = new();
-
             var result = await Cli.Wrap("systemctl")
                 .WithArguments("status NetworkManager")
                 .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdOutBuffer))
@@ -29,10 +31,10 @@ namespace NetworkManagerWrapperLibrary.NetworkController
                 .ExecuteAsync();
 
             var stdOut = stdOutBuffer.ToString();
-
             if (result.ExitCode != 0)
             {
-                throw new Exception($"Error: {stdErrBuffer}");
+                _logger?.LogError($"Error checking NetworkManager service status: {stdErrBuffer}");
+                return false;
             }
 
             return stdOut.Contains("Active: active (running)");
@@ -42,7 +44,6 @@ namespace NetworkManagerWrapperLibrary.NetworkController
         {
             StringBuilder stdOutBuffer = new();
             StringBuilder stdErrBuffer = new();
-
             var result = await Cli.Wrap("nmcli")
                 .WithArguments("device")
                 .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdOutBuffer))
@@ -51,18 +52,19 @@ namespace NetworkManagerWrapperLibrary.NetworkController
                 .ExecuteAsync();
 
             var stdOut = stdOutBuffer.ToString();
-
             if (result.ExitCode != 0)
             {
-                throw new Exception($"Error: {stdErrBuffer}");
+                _logger?.LogError($"Error getting devices: {stdErrBuffer}");
+                return new();
             }
 
             var networkDevices = new List<NetworkDevice>();
-            var lines = stdOut.Split("\n").ToList();
-            for (int i = 1; i < lines.Count() - 1; i++)
+            foreach (var line in stdOut.Split("\n").ToList())
             {
-                var line = lines[i];
                 var parts = line.Split("  ", StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length != 4)
+                    continue;
+
                 var device = new NetworkDevice
                 {
                     Device = parts[0],
@@ -72,6 +74,7 @@ namespace NetworkManagerWrapperLibrary.NetworkController
                 };
                 networkDevices.Add(device);
             }
+
             return networkDevices;
         }
 
@@ -79,7 +82,6 @@ namespace NetworkManagerWrapperLibrary.NetworkController
         {
             StringBuilder stdOutBuffer = new();
             StringBuilder stdErrBuffer = new();
-
             var result = await Cli.Wrap("nmcli")
                 .WithArguments($"device show {id}")
                 .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdOutBuffer))
@@ -88,21 +90,19 @@ namespace NetworkManagerWrapperLibrary.NetworkController
                 .ExecuteAsync();
 
             var stdOut = stdOutBuffer.ToString();
-
             if (result.ExitCode != 0)
             {
-                throw new Exception($"Error: {stdErrBuffer}");
+                _logger?.LogError($"Error getting device properties: {stdErrBuffer}");
+                return new();
             }
 
             var properties = new Dictionary<string, string>();
-            var lines = stdOut.Split("\n").ToList();
-            foreach (var line in lines)
+            foreach (var line in stdOut.Split("\n").ToList())
             {
                 var parts = line.Split(":", StringSplitOptions.RemoveEmptyEntries);
-                if (parts.Length == 2)
-                {
-                    properties.Add(parts[0].Trim(), parts[1].Trim());
-                }
+                if (parts.Length != 2)
+                    continue;
+                properties.Add(parts[0].Trim(), parts[1].Trim());
             }
 
             return properties;
@@ -112,7 +112,6 @@ namespace NetworkManagerWrapperLibrary.NetworkController
         {
             StringBuilder stdOutBuffer = new();
             StringBuilder stdErrBuffer = new();
-
             var result = await Cli.Wrap("nmcli")
                 .WithArguments("connection")
                 .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdOutBuffer))
@@ -121,19 +120,19 @@ namespace NetworkManagerWrapperLibrary.NetworkController
                 .ExecuteAsync();
 
             var stdOut = stdOutBuffer.ToString();
-
             if (result.ExitCode != 0)
             {
-                throw new Exception($"Error: {stdErrBuffer}");
+                _logger?.LogError($"Error getting connections: {stdErrBuffer}");
+                return new();
             }
 
             var networkConnections = new List<NetworkConnection>();
-            var lines = stdOut.Split("\n").ToList();
-
-            for (int i = 1; i < lines.Count() - 1; i++)
+            foreach (var line in stdOut.Split("\n").ToList())
             {
-                var line = lines[i];
                 var parts = line.Split("  ", StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length != 4)
+                    continue;
+
                 var connection = new NetworkConnection
                 {
                     Name = parts[0],
@@ -151,7 +150,6 @@ namespace NetworkManagerWrapperLibrary.NetworkController
         {
             StringBuilder stdOutBuffer = new();
             StringBuilder stdErrBuffer = new();
-
             var result = await Cli.Wrap("nmcli")
                 .WithArguments($"connection show id {id}")
                 .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdOutBuffer))
@@ -160,33 +158,29 @@ namespace NetworkManagerWrapperLibrary.NetworkController
                 .ExecuteAsync();
 
             var stdOut = stdOutBuffer.ToString();
-
             if (result.ExitCode != 0)
             {
-                throw new Exception($"Error: {stdErrBuffer}");
+                _logger?.LogError($"Error getting connection properties: {stdErrBuffer}");
+                return new();
             }
 
             var properties = new Dictionary<string, string>();
-
-            var lines = stdOut.Split("\n").ToList();
-            foreach (var line in lines)
+            foreach (var line in stdOut.Split("\n").ToList())
             {
                 var parts = line.Split(":", StringSplitOptions.RemoveEmptyEntries);
-                if (parts.Length > 1)
-                {
-                    // Mac address has a colon in it, so we need to join the parts
-                    properties.Add(parts[0].Trim(), string.Join(":", parts.Skip(1)).Trim());
-                }
+                if (parts.Length !> 1)
+                    continue;
+                // Mac address has a colon in it, so we need to join the parts
+                properties.Add(parts[0].Trim(), string.Join(":", parts.Skip(1)).Trim());
             }
 
             return properties;
         }
 
-        public async Task AddEthernetConnectionAsync(string name, string interfaceId)
+        public async Task<bool> AddEthernetConnectionAsync(string name, string interfaceId)
         {
             StringBuilder stdOutBuffer = new();
             StringBuilder stdErrBuffer = new();
-
             var result = await Cli.Wrap("sudo")
                 .WithArguments($"nmcli connection add type ethernet con-name {name} ifname {interfaceId}")
                 .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdOutBuffer))
@@ -196,15 +190,17 @@ namespace NetworkManagerWrapperLibrary.NetworkController
 
             if (result.ExitCode != 0)
             {
-                throw new Exception($"Error: {stdErrBuffer}");
+                _logger?.LogError($"Error adding ethernet connection: {stdErrBuffer}");
+                return false;
             }
+
+            return true;
         }
 
-        public async Task AddWifiConnectionAsync(string name, string interfaceId, string ssid, string password, string keyManagement)
+        public async Task<bool> AddWifiConnectionAsync(string name, string interfaceId, string ssid, string password, string keyManagement)
         {
             StringBuilder stdOutBuffer = new();
             StringBuilder stdErrBuffer = new();
-
             var result = await Cli.Wrap("sudo")
                 .WithArguments($"nmcli connection add type wifi con-name {name} ifname {interfaceId} ssid \"{ssid}\" +802-11-wireless-security.key-mgmt \"{keyManagement}\" +802-11-wireless-security.psk \"{password}\"")
                 .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdOutBuffer))
@@ -214,15 +210,17 @@ namespace NetworkManagerWrapperLibrary.NetworkController
 
             if (result.ExitCode != 0)
             {
-                throw new Exception($"Error: {stdErrBuffer}");
+                _logger?.LogError($"Error adding wifi connection: {stdErrBuffer}");
+                return false;
             }
+
+            return true;
         }
 
         public async Task<bool> ModifyConnectionPropertyAsync(string connectionId, string property, string value)
         {
             StringBuilder stdOutBuffer = new();
             StringBuilder stdErrBuffer = new();
-
             var result = await Cli.Wrap("sudo")
                 .WithArguments($"nmcli connection modify {connectionId} {property} {value}")
                 .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdOutBuffer))
@@ -232,15 +230,16 @@ namespace NetworkManagerWrapperLibrary.NetworkController
 
             if (result.ExitCode != 0)
             {
-                throw new Exception($"Error: {stdErrBuffer}");
+                _logger?.LogError($"Error modifying connection property {property} to {value}: {stdErrBuffer}");
+                return false;
             }
 
-
-            // Check if the property was set correctly (needs to be tested)
-            //if ((await GetConnectionPropertyAsync(connectionId, property)).ToLower() != value.ToLower())
-            //{
-            //    return false;
-            //}
+            //Check if the property was set correctly(needs to be tested)
+            var newValue = await GetConnectionPropertyAsync(connectionId, property);
+            if (newValue.ToLower() != value.ToLower())
+            {
+                _logger?.LogError($"Error: {newValue} != {value}");
+            }
 
             return true;
         }
@@ -249,27 +248,29 @@ namespace NetworkManagerWrapperLibrary.NetworkController
         {
             StringBuilder stdOutBuffer = new();
             StringBuilder stdErrBuffer = new();
-
-            var result = await Cli.Wrap("nmcli")
-                .WithArguments($"--terse --fields {property} con show {connectionId} | awk -F: '{{print $2}}'")
+            var result = await Cli.Wrap("sudo")
+                .WithArguments($"nmcli --terse --fields {property} con show {connectionId}")
                 .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdOutBuffer))
                 .WithStandardErrorPipe(PipeTarget.ToStringBuilder(stdErrBuffer))
                 .WithValidation(CommandResultValidation.None)
                 .ExecuteAsync();
 
-            if (result.ExitCode != 0)
+            // result is property:value
+            // we only want the value
+            var parts = stdOutBuffer.ToString().Split(":");
+            if (result.ExitCode != 0 || parts.Length < 2)
             {
-                throw new Exception($"Error: {stdErrBuffer}");
+                _logger?.LogError($"Error getting connection property {property} on connection {connectionId}: {stdErrBuffer}");
+                return string.Empty;
             }
 
-            return stdOutBuffer.ToString();
+            return parts[1].Replace("\r", string.Empty).Replace("\n", string.Empty);
         }
 
         public async Task<bool> DeleteConnectionAsync(string id)
         {
             StringBuilder stdOutBuffer = new();
             StringBuilder stdErrBuffer = new();
-
             var result = await Cli.Wrap("sudo")
                 .WithArguments($"nmcli connection delete {id}")
                 .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdOutBuffer))
@@ -279,7 +280,8 @@ namespace NetworkManagerWrapperLibrary.NetworkController
 
             if (result.ExitCode != 0)
             {
-                throw new Exception($"Error: {stdErrBuffer}");
+                _logger?.LogError($"Error deleting connection {id}: {stdErrBuffer}");
+                return false;
             }
 
             return true;
@@ -289,7 +291,6 @@ namespace NetworkManagerWrapperLibrary.NetworkController
         {
             StringBuilder stdOutBuffer = new();
             StringBuilder stdErrBuffer = new();
-
             var result = await Cli.Wrap("sudo")
                 .WithArguments($"nmcli connection up {id}")
                 .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdOutBuffer))
@@ -299,7 +300,8 @@ namespace NetworkManagerWrapperLibrary.NetworkController
 
             if (result.ExitCode != 0)
             {
-                throw new Exception($"Error: {stdErrBuffer}");
+                _logger?.LogError($"Error: {stdErrBuffer}");
+                return false;
             }
 
             return true;
@@ -309,7 +311,6 @@ namespace NetworkManagerWrapperLibrary.NetworkController
         {
             StringBuilder stdOutBuffer = new();
             StringBuilder stdErrBuffer = new();
-
             var result = await Cli.Wrap("sudo")
                 .WithArguments($"nmcli connection down {id}")
                 .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdOutBuffer))
@@ -319,7 +320,8 @@ namespace NetworkManagerWrapperLibrary.NetworkController
 
             if (result.ExitCode != 0)
             {
-                throw new Exception($"Error: {stdErrBuffer}");
+                _logger?.LogError($"Error disabling connection {id}: {stdErrBuffer}");
+                return false;
             }
 
             return true;
@@ -330,7 +332,6 @@ namespace NetworkManagerWrapperLibrary.NetworkController
         {
             StringBuilder stdOutBuffer = new();
             StringBuilder stdErrBuffer = new();
-
             var result = await Cli.Wrap("nmcli")
                 .WithArguments("radio wifi")
                 .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdOutBuffer))
@@ -339,10 +340,10 @@ namespace NetworkManagerWrapperLibrary.NetworkController
                 .ExecuteAsync();
 
             var stdOut = stdOutBuffer.ToString();
-
             if (result.ExitCode != 0)
             {
-                throw new Exception($"Error: {stdErrBuffer}");
+                _logger?.LogError($"Error checking radio status: {stdErrBuffer}");
+                return false;
             }
 
             return stdOut.Contains("enabled");
@@ -352,7 +353,6 @@ namespace NetworkManagerWrapperLibrary.NetworkController
         {
             StringBuilder stdOutBuffer = new();
             StringBuilder stdErrBuffer = new();
-
             var result = await Cli.Wrap("sudo")
                 .WithArguments("nmcli radio wifi on")
                 .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdOutBuffer))
@@ -362,7 +362,8 @@ namespace NetworkManagerWrapperLibrary.NetworkController
 
             if (result.ExitCode != 0)
             {
-                throw new Exception($"Error: {stdErrBuffer}");
+                _logger?.LogError($"Error enabling radio: {stdErrBuffer}");
+                return false;
             }
 
             return true;
@@ -372,7 +373,6 @@ namespace NetworkManagerWrapperLibrary.NetworkController
         {
             StringBuilder stdOutBuffer = new();
             StringBuilder stdErrBuffer = new();
-
             var result = await Cli.Wrap("sudo")
                 .WithArguments("nmcli radio wifi off")
                 .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdOutBuffer))
@@ -382,7 +382,8 @@ namespace NetworkManagerWrapperLibrary.NetworkController
 
             if (result.ExitCode != 0)
             {
-                throw new Exception($"Error: {stdErrBuffer}");
+                _logger?.LogError($"Error disabling radio: {stdErrBuffer}");
+                return false;
             }
 
             return true;
@@ -392,7 +393,6 @@ namespace NetworkManagerWrapperLibrary.NetworkController
         {
             StringBuilder stdOutBuffer = new();
             StringBuilder stdErrBuffer = new();
-
             var result = await Cli.Wrap("nmcli")
                 .WithArguments("device wifi list")
                 .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdOutBuffer))
@@ -401,10 +401,10 @@ namespace NetworkManagerWrapperLibrary.NetworkController
                 .ExecuteAsync();
 
             var stdOut = stdOutBuffer.ToString();
-
             if (result.ExitCode != 0)
             {
-                throw new Exception($"Error: {stdErrBuffer}");
+                _logger?.LogError($"Error getting wifi list: {stdErrBuffer}");
+                return new();
             }
 
             return stdOut.Split("\n").ToList();
@@ -414,7 +414,6 @@ namespace NetworkManagerWrapperLibrary.NetworkController
         {
             StringBuilder stdOutBuffer = new();
             StringBuilder stdErrBuffer = new();
-
             var result = await Cli.Wrap("sudo")
                 .WithArguments($"nmcli device wifi connect \"{ssid}\" password \"{password}\"")
                 .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdOutBuffer))
@@ -424,10 +423,83 @@ namespace NetworkManagerWrapperLibrary.NetworkController
 
             if (result.ExitCode != 0)
             {
-                throw new Exception($"Error: {stdErrBuffer}");
+                _logger?.LogError($"Error connecting to wifi: {stdErrBuffer}");
+                return false;
             }
 
             return true;
+        }
+
+        // Pi Device methods
+        public async Task<string> GetDeviceHostnameAsync()
+        {
+            StringBuilder stdOutBuffer = new();
+            StringBuilder stdErrBuffer = new();
+            var result = await Cli.Wrap("hostname")
+                .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdOutBuffer))
+                .WithStandardErrorPipe(PipeTarget.ToStringBuilder(stdErrBuffer))
+                .WithValidation(CommandResultValidation.None)
+                .ExecuteAsync();
+
+            if (result.ExitCode != 0)
+            {
+                _logger?.LogError($"Error getting device host name: {stdErrBuffer}");
+                return string.Empty;
+            }
+
+            return stdOutBuffer.ToString();
+        }
+
+        public async Task<bool> SetDeviceHostNameAsync(string hostName)
+        {
+            StringBuilder stdOutBuffer = new();
+            StringBuilder stdErrBuffer = new();
+            var result = await Cli.Wrap("sudo")
+                .WithArguments($"hostnamectl set-hostname {hostName}")
+                .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdOutBuffer))
+                .WithStandardErrorPipe(PipeTarget.ToStringBuilder(stdErrBuffer))
+                .WithValidation(CommandResultValidation.None)
+                .ExecuteAsync();
+
+            if (result.ExitCode != 0)
+            {
+                _logger?.LogError($"Error setting device host name: {stdErrBuffer}");
+                return false;
+            }
+
+            return true;
+        }
+
+        public async Task<string> GetInterfaceMacAddressAsync(string interfaceName)
+        {
+            StringBuilder stdOutBuffer = new();
+            StringBuilder stdErrBuffer = new();
+            var result = await Cli.Wrap("cat")
+                .WithArguments($"/sys/class/net/{interfaceName}/address")
+                .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdOutBuffer))
+                .WithStandardErrorPipe(PipeTarget.ToStringBuilder(stdErrBuffer))
+                .WithValidation(CommandResultValidation.None)
+                .ExecuteAsync();
+
+            if (result.ExitCode != 0)
+            {
+                _logger?.LogError($"Error getting interface mac address: {stdErrBuffer}");
+                return string.Empty;
+            }
+
+            return stdOutBuffer.ToString();
+        }
+
+        public async Task RebootPi()
+        {
+            StringBuilder stdOutBuffer = new();
+            StringBuilder stdErrBuffer = new();
+            await Cli.Wrap("sudo")
+                .WithArguments("reboot")
+                .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdOutBuffer))
+                .WithStandardErrorPipe(PipeTarget.ToStringBuilder(stdErrBuffer))
+                .WithValidation(CommandResultValidation.None)
+                .ExecuteAsync();
         }
     }
 }
