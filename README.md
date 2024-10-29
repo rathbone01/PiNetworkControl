@@ -94,19 +94,22 @@ In these examples assume the following:
 
 ### Creating an access point
 ```csharp
-    public async Task CreateAP(string connectionName, string Ssid, string Password)
-    {
-        await RemoveConnection(connectionName);
-        await networkController.AddWifiConnectionAsync(connectionName, "wlan0", Ssid, Password, "WPA-PSK");
-        _logger?.LogInformation($"Added wifi connection {connectionName}, SSID: {Ssid}");
-    
-        _logger?.LogInformation($"Setting connection properties for Access Point");
-        await networkController.ModifyConnectionPropertyAsync(connectionName, "connection.autoconnect", "no");
-        await networkController.ModifyConnectionPropertyAsync(connectionName, "802-11-wireless.mode", "ap");
-        await networkController.ModifyConnectionPropertyAsync(connectionName, "802-11-wireless.band", "bg");
-        await networkController.ModifyConnectionPropertyAsync(connectionName, "ipv4.method", "shared");
-        await networkController.EnableConnectionAsync(connectionName);
-    
-        _logger?.LogInformation($"Created and enabled ap: {connectionName} with ssid {Ssid}");
-    }
+        public async Task CreateAP(string connectionName, string Ssid, string Password)
+        {
+            await RemoveConnection(connectionName);
+            await networkController.AddWifiConnectionAsync(connectionName, "wlan0", Ssid, Password, "WPA-PSK");
+            _logger?.LogInformation($"Added wifi connection {connectionName}, SSID: {Ssid}");
+
+            _logger?.LogInformation($"Setting connection properties for Access Point");
+            var properties = new Dictionary<string, string>
+            {
+                { "connection.autoconnect", "no" },
+                { "802-11-wireless.mode", "ap" },
+                { "802-11-wireless.band", "bg" },
+                { "ipv4.method", "shared" }
+            };
+            await networkController.ModifyConnectionPropertiesAsync(connectionName, properties);
+            await networkController.EnableConnectionAsync(connectionName);
+            _logger?.LogInformation($"Created and enabled ap: {connectionName} with ssid {Ssid}");
+        }
 ```
