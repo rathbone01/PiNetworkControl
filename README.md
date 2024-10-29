@@ -77,10 +77,8 @@ In these examples assume the following:
             {
                 _logger?.LogError("Error enabling wifi radio");
             }
-            else
-            {
-                _logger?.LogInformation("Enabled wifi radio");
-            }
+
+            _logger?.LogInformation("Enabled wifi radio");
         }
     
         if (await networkController.EnableConnectionAsync(connectionName))
@@ -88,11 +86,8 @@ In these examples assume the following:
             _logger?.LogInformation($"Enabled connection {connectionName}");
             return true;
         }
-        else
-        {
-            _logger?.LogError($"Error enabling connection {connectionName}");
-        }
-    
+
+         _logger?.LogError($"Error enabling connection {connectionName}");
         return false;
     }
 ```
