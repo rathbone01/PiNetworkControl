@@ -5,7 +5,7 @@ I will turn it into a nuget package when I get around to learning how to do that
 
 ## Examples
 In these examples assume the following:
-
+```csharp
     public enum NetworkType
     {
         Ethernet,
@@ -24,10 +24,11 @@ In these examples assume the following:
         public string? WifiSsid { get; set; }
         public string? WifiPassword { get; set; }
     }
+```
 
 ### Example of setting up a network:
 
-
+```csharp
     private async Task CreateConnection(string connectionName, NetworkConfiguration networkConfiguration)
     {
         if (networkConfiguration.NetworkType == NetworkType.Wifi)
@@ -64,9 +65,10 @@ In these examples assume the following:
     
         _logger?.LogInformation($"Set ipv4.addresses to {networkConfiguration.IpAddress}/{ConvertSubnetMaskToBits(networkConfiguration.SubnetMask!)}");
     }
+```
 
 ### Connecting to the network:
-
+```csharp
     private async Task<bool> Connect(string connectionName, NetworkConfiguration networkConfiguration)
     {
         if (networkConfiguration.NetworkType == NetworkType.Wifi)
@@ -93,9 +95,10 @@ In these examples assume the following:
     
         return false;
     }
+```
 
 ### Creating an access point
-
+```csharp
     public async Task CreateAP(string connectionName, string Ssid, string Password)
     {
         await RemoveConnection(connectionName);
@@ -111,3 +114,4 @@ In these examples assume the following:
     
         _logger?.LogInformation($"Created and enabled ap: {connectionName} with ssid {Ssid}");
     }
+```
