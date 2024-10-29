@@ -234,11 +234,24 @@ namespace NetworkManagerWrapperLibrary.NetworkController
                 return false;
             }
 
-            //Check if the property was set correctly(needs to be tested)
+            //Check if the property was set correctly
             var newValue = await GetConnectionPropertyAsync(connectionId, property);
             if (newValue.ToLower() != value.ToLower())
             {
                 _logger?.LogError($"Error: {newValue} != {value}");
+            }
+
+            return true;
+        }
+
+        public async Task<bool> ModifyConnectionPropertiesAsync(string connectionId, Dictionary<string, string> properties)
+        {
+            foreach (var property in properties)
+            {
+                if (!await ModifyConnectionPropertyAsync(connectionId, property.Key, property.Value))
+                {
+                    return false;
+                }
             }
 
             return true;
