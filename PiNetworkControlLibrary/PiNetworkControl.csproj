@@ -1,10 +1,17 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AssemblyVersion>1.0.7.0</AssemblyVersion>
+	<PackageId>rathbone01.PiNetworkControl</PackageId>
+	<Version>1.0.7</Version>
+	<Authors>Jordan Rathbone</Authors>
+	<ProductName>PiNetworkControl</ProductName>
+	<Description>This NuGet package provides easy C# access for controlling the network adapters on a linux machine that uses the NMCLI (Network Manager) Library. This package is specifically designed with the Raspberry Pi in mind, and therefore is not garunteed to work on any distro of linux besides Raspbian.</Description>
+	<PackageTags>Network, Control, Linux, Raspberry Pi, NMCLI, Network Manager</PackageTags>
+	<RepositoryUrl>https://github.com/rathbone01/PiNetworkControl</RepositoryUrl>
   </PropertyGroup>
 
   <ItemGroup>
