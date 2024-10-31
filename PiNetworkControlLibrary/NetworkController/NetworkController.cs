@@ -1,12 +1,12 @@
 ﻿// This class relies on the CliWrap library to run the nmcli command line tool to interact with NetworkManager (nmcli).
 // This could also be achieved using the System.Diagnostics.Process class, but CliWrap is a more modern and easier to use library.
 
-using NetworkManagerWrapperLibrary.Models;
+using PiNetworkControl.Models;
 using System.Text;
 using CliWrap;
 using Microsoft.Extensions.Logging;
 
-namespace NetworkManagerWrapperLibrary.NetworkController
+namespace PiNetworkControl.NetworkController
 {
     public class NetworkController
     {

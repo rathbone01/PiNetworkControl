@@ -12,7 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\PiNetworkControlLibrary\NetworkManagerWrapperLibrary.csproj" />
+    <ProjectReference Include="..\PiNetworkControlLibrary\PiNetworkControl.csproj" />
   </ItemGroup>
 
 </Project>
