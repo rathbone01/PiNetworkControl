@@ -168,7 +168,7 @@ namespace PiNetworkControl.NetworkController
             foreach (var line in stdOut.Split("\n").ToList())
             {
                 var parts = line.Split(":", StringSplitOptions.RemoveEmptyEntries);
-                if (parts.Length !> 1)
+                if (parts.Length! > 1)
                     continue;
                 // Mac address has a colon in it, so we need to join the parts
                 properties.Add(parts[0].Trim(), string.Join(":", parts.Skip(1)).Trim());
@@ -402,7 +402,7 @@ namespace PiNetworkControl.NetworkController
             return true;
         }
 
-        public async Task<List<string>> GetWifiListAsync()
+        public async Task<List<WifiScanResult>> GetWifiListAsync()
         {
             StringBuilder stdOutBuffer = new();
             StringBuilder stdErrBuffer = new();
@@ -420,7 +420,54 @@ namespace PiNetworkControl.NetworkController
                 return new();
             }
 
-            return stdOut.Split("\n").ToList();
+            var lines = stdOut.Split("\n").ToList();
+            lines.RemoveAt(0); // Remove the header
+
+            List<WifiScanResult> parsedResult = new();
+            foreach (var line in lines)
+            {
+                try
+                {
+                    var wifiResult = ParseWifiResultRow(line);
+                    if (wifiResult.Bssid == "--" || wifiResult.Ssid == "--" || wifiResult.Security == "--")
+                        continue;
+
+                    parsedResult.Add(wifiResult);
+                }
+                catch (Exception e)
+                {
+                    _logger?.LogError($"Error parsing wifi result from string {line}: {e.Message}");
+                    continue;
+                }
+            }
+
+            return parsedResult;
+        }
+
+        private WifiScanResult ParseWifiResultRow(string row)
+        {
+            var parts = row.Split("  ", StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length < 7)
+            {
+                throw new ArgumentException();
+            }
+
+            if (parts.Length > 7)
+            {
+                // Join the SSID parts
+                parts[1] = string.Join(" ", parts.Skip(1).Take(parts.Length - 7));
+            }
+
+            return new WifiScanResult
+            {
+                Bssid = parts[0],
+                Ssid = parts[1],
+                Mode = parts[2],
+                Channel = int.Parse(parts[3]),
+                Rate = parts[4],
+                Signal = int.Parse(parts[5]),
+                Security = parts[6]
+            };
         }
 
         public async Task<bool> ConnectToWifi(string ssid, string password)
