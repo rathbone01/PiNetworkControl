@@ -56,5 +56,22 @@ namespace PiNetworkControlTests
             Assert.AreEqual("1111", result.Bars);
             Assert.AreEqual("WPA2", result.Security);
         }
+
+        [TestMethod]
+        public void TestWifiParser4()
+        {
+            NetworkController controller = new NetworkController();
+            string input = "         42:75:C3:00:22:3A  testssid                   Infra  6     540 Mbit/s  100     1111  WPA2             ";
+            WifiScanResult result = controller.ParseWifiResultRow(input);
+
+            Assert.AreEqual("42:75:C3:00:22:3A", result.Bssid);
+            Assert.AreEqual("testssid", result.Ssid);
+            Assert.AreEqual("Infra", result.Mode);
+            Assert.AreEqual(6, result.Channel);
+            Assert.AreEqual("540 Mbit/s", result.Rate);
+            Assert.AreEqual(100, result.Signal);
+            Assert.AreEqual("1111", result.Bars);
+            Assert.AreEqual("WPA2", result.Security);
+        }
     }
 }

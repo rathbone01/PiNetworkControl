@@ -446,7 +446,7 @@ namespace PiNetworkControl
 
         public WifiScanResult ParseWifiResultRow(string row)
         {
-            List<string> parts = row.Split("  ", StringSplitOptions.RemoveEmptyEntries).ToList();
+            List<string> parts = row.Trim().Split("  ", StringSplitOptions.RemoveEmptyEntries).ToList();
             if (parts.Count < 8)
             {
                 throw new ArgumentException();
