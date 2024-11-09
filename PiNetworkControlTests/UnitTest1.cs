@@ -1,5 +1,4 @@
 using PiNetworkControl;
-using PiNetworkControl.Models;
 
 namespace PiNetworkControlTests
 {
