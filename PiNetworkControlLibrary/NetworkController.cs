@@ -6,7 +6,7 @@ using System.Text;
 using CliWrap;
 using Microsoft.Extensions.Logging;
 
-namespace PiNetworkControl.NetworkController
+namespace PiNetworkControl
 {
     public class NetworkController
     {
@@ -444,29 +444,40 @@ namespace PiNetworkControl.NetworkController
             return parsedResult;
         }
 
-        private WifiScanResult ParseWifiResultRow(string row)
+        public WifiScanResult ParseWifiResultRow(string row)
         {
-            var parts = row.Split("  ", StringSplitOptions.RemoveEmptyEntries);
-            if (parts.Length < 7)
+            List<string> parts = row.Split("  ", StringSplitOptions.RemoveEmptyEntries).ToList();
+            if (parts.Count < 8)
             {
                 throw new ArgumentException();
             }
 
-            if (parts.Length > 7)
+            // this will happen if the SSID has 2 consecutive spaces, unlikely but possible
+            if (parts.Count > 8)
             {
-                // Join the SSID parts
-                parts[1] = string.Join(" ", parts.Skip(1).Take(parts.Length - 7));
+                List<string> parsedParts = new List<string>();
+                parsedParts.Add(parts[0]);
+
+                // Combine parts for SSID (from index 1 to parts.Count - 7)
+                string combinedSsid = string.Join("  ", parts.Skip(1).Take(parts.Count - 7));
+                parsedParts.Add(combinedSsid);
+
+                // Add the remaining elements after SSID (the last 6 parts)
+                parsedParts.AddRange(parts.Skip(parts.Count - 6));
+
+                parts = parsedParts;
             }
 
             return new WifiScanResult
             {
                 Bssid = parts[0],
-                Ssid = parts[1],
-                Mode = parts[2],
+                Ssid = parts[1].Trim(),
+                Mode = parts[2].Trim(),
                 Channel = int.Parse(parts[3]),
-                Rate = parts[4],
+                Rate = parts[4].Trim(),
                 Signal = int.Parse(parts[5]),
-                Security = parts[6]
+                Bars = parts[6].Trim(),
+                Security = parts[7].Trim()
             };
         }
 

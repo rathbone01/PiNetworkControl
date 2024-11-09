@@ -8,9 +8,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PiNetworkControl", "PiNetworkControlLibrary\PiNetworkControl.csproj", "{AA92F00B-9FD7-4E89-B97F-D91220B3E6D4}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{64AFA3EE-90B2-46D3-A51E-943475137B84}"
-	ProjectSection(SolutionItems) = preProject
-		PiNetworkControlLibrary\README.md = PiNetworkControlLibrary\README.md
-	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PiNetworkControlTests", "PiNetworkControlTests\PiNetworkControlTests.csproj", "{9A0893F4-319A-4EEF-9C78-6A16048E88F6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -26,6 +25,10 @@ Global
 		{AA92F00B-9FD7-4E89-B97F-D91220B3E6D4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AA92F00B-9FD7-4E89-B97F-D91220B3E6D4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AA92F00B-9FD7-4E89-B97F-D91220B3E6D4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9A0893F4-319A-4EEF-9C78-6A16048E88F6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9A0893F4-319A-4EEF-9C78-6A16048E88F6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9A0893F4-319A-4EEF-9C78-6A16048E88F6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9A0893F4-319A-4EEF-9C78-6A16048E88F6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -14,6 +14,7 @@ namespace PiNetworkControl.Models
         public int Channel { get; set; }
         public string Rate { get; set; } = string.Empty;
         public int Signal { get; set; }
+        public string Bars { get; set; } = string.Empty;
         public string Security { get; set; } = string.Empty;
     }
 }
