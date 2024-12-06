@@ -223,10 +223,10 @@ namespace PiNetworkControl
 
                 var connection = new NetworkConnection
                 {
-                    Name = parts[0],
-                    UUID = parts[1],
-                    Type = parts[2],
-                    Device = parts[3]
+                    Name = parts[0].Trim(),
+                    UUID = parts[1].Trim(),
+                    Type = parts[2].Trim(),
+                    Device = parts[3].Trim()
                 };
                 networkConnections.Add(connection);
             }
@@ -723,6 +723,9 @@ namespace PiNetworkControl
                 _logger?.LogError($"Error getting wifi list: {stdErrBuffer}");
                 return new();
             }
+
+            //Active wifi connection has * in front of it, remove it for parsing
+            stdOut.Replace("*", " ");
 
             var lines = stdOut.Split("\n").ToList();
             lines.RemoveAt(0); // Remove the header
