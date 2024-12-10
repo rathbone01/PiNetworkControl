@@ -26,7 +26,7 @@ namespace PiNetworkControlTests
         public void TestWifiParser2()
         {
             NetworkController controller = new NetworkController();
-            string input = "6C:5A:B0:40:E1:9C     Test  SSID                   Infra  2       195 Mbit/s  100          1111   WPA2";
+            string input = "*       6C:5A:B0:40:E1:9C     Test  SSID                   Infra  2       195 Mbit/s  100          1111   WPA2";
             WifiScanResult result = controller.ParseWifiResultRow(input);
 
             Assert.AreEqual("6C:5A:B0:40:E1:9C", result.Bssid);

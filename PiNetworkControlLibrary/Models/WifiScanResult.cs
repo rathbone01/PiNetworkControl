@@ -8,6 +8,7 @@ namespace PiNetworkControl
 {
     public class WifiScanResult
     {
+        public bool IsActive { get; set; } = false;
         public string Bssid { get; set; } = string.Empty;
         public string Ssid { get; set; } = string.Empty;
         public string Mode { get; set; } = string.Empty;

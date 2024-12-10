@@ -725,7 +725,7 @@ namespace PiNetworkControl
             }
 
             //Active wifi connection has * in front of it, remove it for parsing
-            stdOut.Replace("*", " ");
+            //stdOut.Replace("*", " ");
 
             var lines = stdOut.Split("\n").ToList();
             lines.RemoveAt(0); // Remove the header
@@ -768,6 +768,10 @@ namespace PiNetworkControl
         /// </remarks>
         public WifiScanResult ParseWifiResultRow(string row)
         {
+            bool isActive = row.StartsWith("*");
+            if (isActive)
+                row = row.Substring(1);
+
             List<string> parts = row.Trim().Split("  ", StringSplitOptions.RemoveEmptyEntries).ToList();
             if (parts.Count < 8)
             {
@@ -777,8 +781,7 @@ namespace PiNetworkControl
             // this will happen if the SSID has 2 consecutive spaces, unlikely but possible
             if (parts.Count > 8)
             {
-                List<string> parsedParts = new List<string>();
-                parsedParts.Add(parts[0]);
+                List<string> parsedParts = [parts[0]];
 
                 // Combine parts for SSID (from index 1 to parts.Count - 7)
                 string combinedSsid = string.Join("  ", parts.Skip(1).Take(parts.Count - 7));
@@ -792,6 +795,7 @@ namespace PiNetworkControl
 
             return new WifiScanResult
             {
+                IsActive = isActive,
                 Bssid = parts[0],
                 Ssid = parts[1].Trim(),
                 Mode = parts[2].Trim(),
