@@ -152,7 +152,7 @@ namespace PiNetworkControl
             StringBuilder stdOutBuffer = new();
             StringBuilder stdErrBuffer = new();
             var result = await Cli.Wrap("nmcli")
-                .WithArguments($"device show {id}")
+                .WithArguments($"device show \"{id}\"")
                 .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdOutBuffer))
                 .WithStandardErrorPipe(PipeTarget.ToStringBuilder(stdErrBuffer))
                 .WithValidation(CommandResultValidation.None)
@@ -214,11 +214,20 @@ namespace PiNetworkControl
                 return new();
             }
 
+            return ParseConnections(stdOut);
+        }
+
+        private List<NetworkConnection> ParseConnections(string input)
+        {
             var networkConnections = new List<NetworkConnection>();
-            foreach (var line in stdOut.Split("\n").ToList())
+            foreach (var line in input.Split("\n").ToList())
             {
-                var parts = line.Split("  ", StringSplitOptions.RemoveEmptyEntries);
+                var filteredLine = line.Trim();
+                var parts = filteredLine.Split("  ", StringSplitOptions.RemoveEmptyEntries);
                 if (parts.Length != 4)
+                    continue;
+
+                if (parts[1].Contains("UUID"))
                     continue;
 
                 var connection = new NetworkConnection
@@ -233,6 +242,7 @@ namespace PiNetworkControl
 
             return networkConnections;
         }
+
 
         /// <summary>
         /// Asynchronously retrieves the properties of a specific network connection using the <c>nmcli connection show id</c> command.
@@ -262,7 +272,7 @@ namespace PiNetworkControl
             StringBuilder stdOutBuffer = new();
             StringBuilder stdErrBuffer = new();
             var result = await Cli.Wrap("nmcli")
-                .WithArguments($"connection show id {id}")
+                .WithArguments($"connection show id \"{id}\"")
                 .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdOutBuffer))
                 .WithStandardErrorPipe(PipeTarget.ToStringBuilder(stdErrBuffer))
                 .WithValidation(CommandResultValidation.None)
@@ -314,7 +324,7 @@ namespace PiNetworkControl
             StringBuilder stdOutBuffer = new();
             StringBuilder stdErrBuffer = new();
             var result = await Cli.Wrap("sudo")
-                .WithArguments($"nmcli connection add type ethernet con-name {name} ifname {interfaceId}")
+                .WithArguments($"nmcli connection add type ethernet con-name \"{name}\" ifname {interfaceId}")
                 .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdOutBuffer))
                 .WithStandardErrorPipe(PipeTarget.ToStringBuilder(stdErrBuffer))
                 .WithValidation(CommandResultValidation.None)
@@ -365,7 +375,7 @@ namespace PiNetworkControl
             StringBuilder stdOutBuffer = new();
             StringBuilder stdErrBuffer = new();
             var result = await Cli.Wrap("sudo")
-                .WithArguments($"nmcli connection add type wifi con-name {name} ifname {interfaceId} ssid \"{ssid}\" +802-11-wireless-security.key-mgmt \"{keyManagement}\" +802-11-wireless-security.psk \"{password}\"")
+                .WithArguments($"nmcli connection add type wifi con-name \"{name}\" ifname {interfaceId} ssid \"{ssid}\" +802-11-wireless-security.key-mgmt \"{keyManagement}\" +802-11-wireless-security.psk \"{password}\"")
                 .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdOutBuffer))
                 .WithStandardErrorPipe(PipeTarget.ToStringBuilder(stdErrBuffer))
                 .WithValidation(CommandResultValidation.None)
@@ -411,7 +421,7 @@ namespace PiNetworkControl
             StringBuilder stdOutBuffer = new();
             StringBuilder stdErrBuffer = new();
             var result = await Cli.Wrap("sudo")
-                .WithArguments($"nmcli connection modify {connectionId} {property} {value}")
+                .WithArguments($"nmcli connection modify \"{connectionId}\" {property} {value}")
                 .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdOutBuffer))
                 .WithStandardErrorPipe(PipeTarget.ToStringBuilder(stdErrBuffer))
                 .WithValidation(CommandResultValidation.None)
@@ -478,7 +488,7 @@ namespace PiNetworkControl
             StringBuilder stdOutBuffer = new();
             StringBuilder stdErrBuffer = new();
             var result = await Cli.Wrap("sudo")
-                .WithArguments($"nmcli --terse --fields {property} con show {connectionId}")
+                .WithArguments($"nmcli --terse --fields {property} con show \"{connectionId}\"")
                 .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdOutBuffer))
                 .WithStandardErrorPipe(PipeTarget.ToStringBuilder(stdErrBuffer))
                 .WithValidation(CommandResultValidation.None)
@@ -514,7 +524,7 @@ namespace PiNetworkControl
             StringBuilder stdOutBuffer = new();
             StringBuilder stdErrBuffer = new();
             var result = await Cli.Wrap("sudo")
-                .WithArguments($"nmcli connection delete {id}")
+                .WithArguments($"nmcli connection delete \"{id}\"")
                 .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdOutBuffer))
                 .WithStandardErrorPipe(PipeTarget.ToStringBuilder(stdErrBuffer))
                 .WithValidation(CommandResultValidation.None)
@@ -547,7 +557,7 @@ namespace PiNetworkControl
             StringBuilder stdOutBuffer = new();
             StringBuilder stdErrBuffer = new();
             var result = await Cli.Wrap("sudo")
-                .WithArguments($"nmcli connection up {id}")
+                .WithArguments($"nmcli connection up \"{id}\"")
                 .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdOutBuffer))
                 .WithStandardErrorPipe(PipeTarget.ToStringBuilder(stdErrBuffer))
                 .WithValidation(CommandResultValidation.None)
@@ -580,7 +590,7 @@ namespace PiNetworkControl
             StringBuilder stdOutBuffer = new();
             StringBuilder stdErrBuffer = new();
             var result = await Cli.Wrap("sudo")
-                .WithArguments($"nmcli connection down {id}")
+                .WithArguments($"nmcli connection down \"{id}\"")
                 .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdOutBuffer))
                 .WithStandardErrorPipe(PipeTarget.ToStringBuilder(stdErrBuffer))
                 .WithValidation(CommandResultValidation.None)
@@ -830,7 +840,7 @@ namespace PiNetworkControl
             StringBuilder stdOutBuffer = new();
             StringBuilder stdErrBuffer = new();
             var result = await Cli.Wrap("sudo")
-                .WithArguments($"nmcli device wifi connect \"{ssid}\" password \"{password}\" hidden {(hidden == false ? "no" : "yes")}{(connectionName == "" ? "" : " name ")}{connectionName}")
+                .WithArguments($"nmcli device wifi connect \"{ssid}\" password \"{password}\" hidden {(hidden == false ? "no" : "yes")}{(connectionName == "" ? "" : " name ")}\"{connectionName}\"")
                 .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdOutBuffer))
                 .WithStandardErrorPipe(PipeTarget.ToStringBuilder(stdErrBuffer))
                 .WithValidation(CommandResultValidation.None)

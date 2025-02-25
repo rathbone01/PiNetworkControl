@@ -95,12 +95,28 @@ namespace PiNetworkControl
 
             Console.WriteLine();
             Console.WriteLine("Enter a network connection name for properties or enter back to go back.");
+            Console.WriteLine("enter 'delete' to delete all connections");
+
 
             while (true)
             {
                 var input = Console.ReadLine();
                 if (input == "back")
                 {
+                    return;
+                }
+
+                if (input == "delete")
+                {
+                    var connections = await networkController.GetConnectionsAsync();
+                    foreach (var connection in connections)
+                    {
+                        if (await networkController.DeleteConnectionAsync(connection.Name))
+                            Console.WriteLine($"Deleted connection {connection.Name}");
+                        else
+                            Console.WriteLine($"Failed to delete connection {connection.Name}");
+                    }
+
                     return;
                 }
 

@@ -6,7 +6,7 @@
 		<Nullable>enable</Nullable>
 		<AssemblyVersion>1.0.15.0</AssemblyVersion>
 		<PackageId>rathbone01.PiNetworkControl</PackageId>
-		<Version>1.0.14</Version>
+		<Version>1.0.15</Version>
 		<Authors>Jordan Rathbone</Authors>
 		<ProductName>PiNetworkControl</ProductName>
 		<Description>This NuGet package provides easy C# access for controlling the network adapters on a linux machine that uses the NMCLI (Network Manager) Library. This package is specifically designed with the Raspberry Pi in mind, and therefore is not guaranteed to work on any distro of linux besides Raspbian.</Description>

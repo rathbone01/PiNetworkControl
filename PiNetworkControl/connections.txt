@@ -1,0 +1,14 @@
+NAME                         UUID                                  TYPE      DEVICE 
+Get In The Robot             20f7dfab-62fc-430f-b9b8-72e953bd7344  wifi      wlan0  
+lo                           bc1a746d-9491-4545-aeba-c4728beae2dc  loopback  lo     
+CBMD_Network                 8e597139-04b2-4978-a266-f03a66f7436d  ethernet  --     
+CBMD_Network                 a4682276-890d-4bd6-8cd8-b6072566e5dc  ethernet  --     
+CBMD_Network                 92208266-f7ab-4840-876b-9fc309b634a5  ethernet  --     
+CBMD_Network                 495f764f-e13a-47cf-987e-94843ba9b792  ethernet  --     
+CBMD_Network                 abc3f26b-9434-46af-9a5e-1e02ce000583  ethernet  --     
+CBMD_Network                 81467e44-75cb-4ca8-8d36-7f1eb530b6c5  ethernet  --     
+CBMD_Network                 41f56698-c808-4c23-8dd0-8f08bf44dde9  ethernet  --     
+CBMD_Network                 40cecb12-d83b-4a83-9593-7bc86913392c  ethernet  --     
+CBMD_Network                 7f16e8ae-8f11-4cb9-86c6-6e859db87f86  ethernet  --     
+CBMD_Network                 eabbbd74-90d3-4efa-a154-cd154bf460db  ethernet  --     
+DIRECT-7D-HP OfficeJet 4650  81e1b894-9d12-48fd-b952-b9b473797dc1  wifi      --     
