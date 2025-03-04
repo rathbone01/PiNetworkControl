@@ -891,7 +891,7 @@ namespace PiNetworkControl
             StringBuilder stdOutBuffer = new();
             StringBuilder stdErrBuffer = new();
             var result = await Cli.Wrap("sudo")
-                .WithArguments(@"awk '/127\.0\.0\.1/ {print $2}' /etc/hosts")
+                .WithArguments(["awk", "/127\\.0\\.1\\.1/ {print $2}", "/etc/hosts"]) // Pass each argument separately
                 .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdOutBuffer))
                 .WithStandardErrorPipe(PipeTarget.ToStringBuilder(stdErrBuffer))
                 .WithValidation(CommandResultValidation.None)
@@ -955,10 +955,21 @@ namespace PiNetworkControl
 
         private async Task<bool> SetDeviceHostnameHostsAsync(string hostname)
         {
+            var currentHostnameHosts = await GetDeviceHostnameHostsAsync();
+            if (string.IsNullOrWhiteSpace(currentHostnameHosts))
+            {
+                _logger?.LogError("Error: Could not retrieve current hostname from /etc/hosts.");
+                return false;
+            }
+
+            // Escape special characters in the hostname for `sed`
+            string escapedCurrentHostname = currentHostnameHosts.Replace("/", "\\/").Replace("&", "\\&");
+
             StringBuilder stdOutBuffer = new();
             StringBuilder stdErrBuffer = new();
+
             var result = await Cli.Wrap("sudo")
-                .WithArguments($@"sudo sed -i ""s/$(hostname)/{hostname}/g"" /etc/hosts")
+                .WithArguments(["sed", "-i", $"s/{escapedCurrentHostname}/{hostname}/g", "/etc/hosts"])
                 .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdOutBuffer))
                 .WithStandardErrorPipe(PipeTarget.ToStringBuilder(stdErrBuffer))
                 .WithValidation(CommandResultValidation.None)
@@ -966,7 +977,7 @@ namespace PiNetworkControl
 
             if (result.ExitCode != 0)
             {
-                _logger?.LogError($"Error setting device host name: {stdErrBuffer}");
+                _logger?.LogError($"Error setting device hostname: {stdErrBuffer}");
                 return false;
             }
 
