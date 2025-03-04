@@ -891,7 +891,7 @@ namespace PiNetworkControl
             StringBuilder stdOutBuffer = new();
             StringBuilder stdErrBuffer = new();
             var result = await Cli.Wrap("sudo")
-                .WithArguments(@"grep '^127\.0\.1\.1' /etc/hosts | grep -o '[^ ]*$'")
+                .WithArguments(@"awk '/127\.0\.0\.1/ {print $2}' /etc/hosts")
                 .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdOutBuffer))
                 .WithStandardErrorPipe(PipeTarget.ToStringBuilder(stdErrBuffer))
                 .WithValidation(CommandResultValidation.None)
@@ -927,7 +927,7 @@ namespace PiNetworkControl
             if (hostname.Contains(" "))
                 hostname = hostname.Replace(" ", "-");
 
-            if (!await SetDeviceHostnameCtlAsync(hostname) || !await SetDeviceHostnameHostsAsync(hostname))
+            if (!await SetDeviceHostnameHostsAsync(hostname) || !await SetDeviceHostnameCtlAsync(hostname))
                 return false;
 
             return true;
@@ -958,7 +958,7 @@ namespace PiNetworkControl
             StringBuilder stdOutBuffer = new();
             StringBuilder stdErrBuffer = new();
             var result = await Cli.Wrap("sudo")
-                .WithArguments($@"sed -i 's/^127\.0\.1\.1.*/127.0.1.1 {hostname}/' /etc/hosts")
+                .WithArguments($@"sudo sed -i ""s/$(hostname)/{hostname}/g"" /etc/hosts")
                 .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdOutBuffer))
                 .WithStandardErrorPipe(PipeTarget.ToStringBuilder(stdErrBuffer))
                 .WithValidation(CommandResultValidation.None)
