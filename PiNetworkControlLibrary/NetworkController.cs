@@ -867,7 +867,7 @@ namespace PiNetworkControl
         /// If the command fails (non-zero exit code), an error message is logged, and the method returns an empty string.
         /// The output is cleaned up to remove any carriage return or newline characters before returning the hostname.
         /// </remarks>
-        public async Task<string> GetDeviceHostnameAsync()
+        public async Task<string> GetDeviceHostnameCtlAsync()
         {
             StringBuilder stdOutBuffer = new();
             StringBuilder stdErrBuffer = new();
@@ -879,17 +879,37 @@ namespace PiNetworkControl
 
             if (result.ExitCode != 0)
             {
-                _logger?.LogError($"Error getting device host name: {stdErrBuffer}");
+                _logger?.LogError($"Error getting device hostname: {stdErrBuffer}");
                 return string.Empty;
             }
 
-            return stdOutBuffer.ToString().Replace("\r", "").Replace("\n", "");
+            return stdOutBuffer.ToString().Trim();
+        }
+
+        public async Task<string> GetDeviceHostnameHostsAsync()
+        {
+            StringBuilder stdOutBuffer = new();
+            StringBuilder stdErrBuffer = new();
+            var result = await Cli.Wrap("sudo")
+                .WithArguments(@"grep '^127\.0\.1\.1' /etc/hosts | grep -o '[^ ]*$'")
+                .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdOutBuffer))
+                .WithStandardErrorPipe(PipeTarget.ToStringBuilder(stdErrBuffer))
+                .WithValidation(CommandResultValidation.None)
+                .ExecuteAsync();
+
+            if (result.ExitCode != 0)
+            {
+                _logger?.LogError($"Error getting device hostname: {stdErrBuffer}");
+                return string.Empty;
+            }
+
+            return stdOutBuffer.ToString().Trim();
         }
 
         /// <summary>
         /// Asynchronously sets the device's hostname to the specified value.
         /// </summary>
-        /// <param name="hostName">The new hostname to be set for the device.</param>
+        /// <param name="hostname">The new hostname to be set for the device.</param>
         /// <returns>
         /// A <see cref="Task{Boolean}"/> that represents the asynchronous operation. 
         /// The result is <c>true</c> if the hostname was successfully set, otherwise <c>false</c>.
@@ -899,12 +919,26 @@ namespace PiNetworkControl
         /// If the command fails (non-zero exit code), an error message is logged, and the method returns <c>false</c>.
         /// If the operation succeeds, it returns <c>true</c>.
         /// </remarks>
-        public async Task<bool> SetDeviceHostNameAsync(string hostName)
+        public async Task<bool> SetDeviceHostnameAsync(string hostname)
+        {
+            hostname = hostname.Trim();
+
+            // if has spaces, replace with hyphen
+            if (hostname.Contains(" "))
+                hostname = hostname.Replace(" ", "-");
+
+            if (!await SetDeviceHostnameCtlAsync(hostname) || !await SetDeviceHostnameHostsAsync(hostname))
+                return false;
+
+            return true;
+        }
+
+        private async Task<bool> SetDeviceHostnameCtlAsync(string hostname)
         {
             StringBuilder stdOutBuffer = new();
             StringBuilder stdErrBuffer = new();
             var result = await Cli.Wrap("sudo")
-                .WithArguments($"hostnamectl set-hostname {hostName}")
+                .WithArguments($"hostnamectl set-hostname {hostname}")
                 .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdOutBuffer))
                 .WithStandardErrorPipe(PipeTarget.ToStringBuilder(stdErrBuffer))
                 .WithValidation(CommandResultValidation.None)
@@ -918,6 +952,27 @@ namespace PiNetworkControl
 
             return true;
         }
+
+        private async Task<bool> SetDeviceHostnameHostsAsync(string hostname)
+        {
+            StringBuilder stdOutBuffer = new();
+            StringBuilder stdErrBuffer = new();
+            var result = await Cli.Wrap("sudo")
+                .WithArguments($@"sed -i 's/^127\.0\.1\.1.*/127.0.1.1 {hostname}/' /etc/hosts")
+                .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdOutBuffer))
+                .WithStandardErrorPipe(PipeTarget.ToStringBuilder(stdErrBuffer))
+                .WithValidation(CommandResultValidation.None)
+                .ExecuteAsync();
+
+            if (result.ExitCode != 0)
+            {
+                _logger?.LogError($"Error setting device host name: {stdErrBuffer}");
+                return false;
+            }
+
+            return true;
+        }
+
 
         /// <summary>
         /// Asynchronously retrieves the MAC address of a specified network interface.
